@@ -1,0 +1,6 @@
+# generated and runtime state; pnpm resolves these, they are not sources
+node_modules/
+.pnpm-store/
+
+# pnpm's own package manager state
+.npmrc
