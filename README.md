@@ -42,6 +42,17 @@ DSH 内置的「获取可用模型」把候选元数据削平到 `id` / `name` /
 - 失败带原因显示（缺凭据、端点 401/500、非 JSON、revision 冲突、配置不可写），
   失败时**一个字段都不写**。
 
+### 选择器里那个「Default」是什么
+
+模型菜单里除了同步出来的那几档，还有一档 **Default**（locale 键 `effort.providerDefault`）。
+它**不属于** `reasoningEfforts`，也不是同步写进去的：那是「提供方默认」，选它等于不给等级
+指令，适配器一个 `reasoning` 字段都不发，由端点按自己的 `default_effort` 决定——卡片里
+「默认 medium」那个 medium 就是它的落点。
+
+它一直都在，因为本插件不写「提供方默认」、也不写路由级默认等级（story 29 / 30）。想让它
+消失只能去写路由级 `reasoning`（会改整条路由所有模型的默认行为）或写 `off`（对 mandatory
+模型直接 400）——两条都不是这个插件会走的路。
+
 ### agent 工具
 
 工具名 `reasoning_sync`：

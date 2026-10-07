@@ -50,6 +50,18 @@ In Settings → Models, the card of a route this plugin serves (one whose `baseU
 - a failure is shown with its reason (no credential, endpoint 401/500, non-JSON, revision conflict,
   unwritable configuration) and **nothing is written**.
 
+### What the picker's "Default" is
+
+Besides the levels a sync puts there, the model menu carries a **Default** entry (locale key
+`effort.providerDefault`). It is **not** part of `reasoningEfforts` and no sync wrote it: it is the
+provider default, and choosing it sends no level instruction at all, leaving the endpoint to decide
+by its own `default_effort` — the "default medium" the card reports is exactly where it lands.
+
+It is always there, because this plugin writes neither "provider default" nor a route-level default
+level (stories 29 / 30). Making it disappear would take a route-level `reasoning` (which changes the
+default behaviour of every model on the route) or an `off` key (a straight 400 against a mandatory
+model) — neither of which this plugin will do.
+
 ### The agent tool
 
 The tool is named `reasoning_sync`:
