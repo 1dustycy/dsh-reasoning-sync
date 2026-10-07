@@ -41,8 +41,10 @@ Afterwards the profile carries one `reasoning-sync` row, contributed by this pac
 In Settings → Models, the card of a route this plugin serves (one whose `baseURL` points at
 `openrouter.ai`) grows a panel:
 
-- it previews on open: the levels the endpoint publishes against the levels currently declared, per
-  model; with no difference it says "up to date";
+- it previews on open with **a row for every declared model**: one already in step says "up to date ·
+  its current levels", one that drifts says "declared X → endpoint Y", and a model with no published
+  capability, one missing from the catalog, and one publishing levels this adapter cannot read are
+  each named in turn; when nothing on the route drifts, the headline itself says up to date;
 - when something differs, "Sync into configuration" writes it and then re-reads, so "up to date" is
   the Host's answer rather than optimism;
 - a failure is shown with its reason (no credential, endpoint 401/500, non-JSON, revision conflict,

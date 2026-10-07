@@ -257,7 +257,7 @@ const LISTED = {
 	}]
 };
 
-/** A result with one model drifting and one cloaked. */
+/** A result with one model drifting, one already in step, and one cloaked. */
 function drifting() {
 	return {
 		ok: true,
@@ -287,6 +287,20 @@ function drifting() {
 					mandatory: true,
 					defaultEffort: "medium"
 				}
+			},
+			{
+				id: "anthropic/claude-opus-5.5",
+				kind: "keep",
+				reason: "in-sync",
+				declared: {
+					low: "low",
+					medium: "medium"
+				},
+				capability: {
+					levels: ["low", "medium"],
+					unknown: [],
+					mandatory: false
+				}
 			}
 		]
 	};
@@ -304,6 +318,7 @@ function current() {
 			id: "openai/gpt-6.1-sol",
 			kind: "keep",
 			reason: "in-sync",
+			declared: { high: "high" },
 			capability: {
 				levels: ["high"],
 				unknown: [],
@@ -432,7 +447,9 @@ test("a served route renders the difference between endpoint and declaration", a
 	assert.match(comparison, /当前 high → 端点 low · high · max/u, "both sides of the difference are shown, in declaration order");
 	assert.match(comparison, /默认 medium/u, "and the level the endpoint falls back to");
 	assert.ok(shown.some((text) => text.includes("stealth/space-bunny-alpha") && text.includes("保持原样")), "a cloaked model is named, and said to be left alone");
+	assert.ok(shown.some((text) => text.includes("anthropic/claude-opus-5.5") && text.includes("已是最新")), "a model already in step is listed too, so the reader can tell it was checked");
 	assert.ok(shown.some((text) => text.includes("不新增、不删除模型")), "and the card says what a sync will not touch");
+	assert.equal(shown.filter((text) => text.includes("openai/gpt-6.1-sol") || text.includes("claude-opus-5.5") || text.includes("space-bunny")).length, 3, "every declared model earns exactly one row");
 });
 
 test("a route this plugin does not serve renders nothing at all", async () => {
@@ -455,7 +472,8 @@ test("an up-to-date route says so, and offers only a re-check", async () => {
 	const instance = runtime.mount(ctx.cells[0].Component, seatProps(ctx));
 	await settle();
 	const shown = texts(instance.tree);
-	assert.ok(shown.some((text) => text.includes("已是最新")), "the user is told there is nothing to do");
+	assert.ok(shown.some((text) => text.includes("已是最新：与端点公布的等级一致")), "the user is told there is nothing to do");
+	assert.ok(shown.some((text) => text.includes("openai/gpt-6.1-sol") && text.includes("已是最新 · high")), "and the declared model says so by name, with the levels it already has");
 	const [button] = elements(instance.tree, "button");
 	assert.equal(texts(button)[0], "重新检查", "the action re-reads instead of writing");
 });
