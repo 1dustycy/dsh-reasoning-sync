@@ -21,10 +21,15 @@ already scripts — and reports what they found. The user runs what needs their 
 profile, the real app, a real OpenRouter key.
 
 `test/registration.test.mjs` is the one suite that reaches outside the repo: it loads the Models
-settings page's slot declaration out of the installed DSH application, so the seat this plugin
-registers into is validated by the shipped declaration rather than by this repo's idea of one.
-Without the app installed it prints a SKIP line and exits 0, so the suite stays runnable anywhere; a
-machine with DSH installed is where it earns its keep.
+settings page's slot declaration, the slot registry, the tool registry's schema checker and the
+Connection endpoint grammar out of the installed DSH application, so the seat this plugin registers
+into and the schemas it hands the model are validated by the shipped code rather than by this repo's
+idea of it. Without the app installed it prints a SKIP line and exits 0, so the suite stays runnable
+anywhere; a machine with DSH installed is where it earns its keep.
+
+The same suite reads the archive through its own asar reader, whose data offset is the 4-byte-aligned
+end of the header rather than `16 + jsonSize`. It verifies every entry against the archive's recorded
+SHA-256, so a reader that is wrong about the layout fails loudly instead of validating wrong bytes.
 
 The **sandbox** is the first thing to rule out when a check looks blocked, and it is never a
 finding about the repo or the machine: it bounds where writes land, so find the workaround and run

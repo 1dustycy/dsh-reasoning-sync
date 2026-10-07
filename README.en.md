@@ -6,8 +6,10 @@ Sync the reasoning capability a model endpoint publishes into a DSH profile's mo
 so the levels in the model picker follow the endpoint instead of being hand-written into
 `cordis.patch.yml` and drifting.
 
-> **Status**: design phase. The behavioural contract lives in this repo's spec issue; implementation
-> has not started.
+Open Settings → Models and the OpenRouter card shows the difference between **the levels the endpoint
+publishes** and **the levels currently declared** — both sides, plus the level the endpoint falls
+back to; one click aligns them. The same operation is also
+exposed as an agent tool: **one operation, two callers**, one implementation.
 
 ## The gap it fills
 
@@ -18,39 +20,105 @@ declaration, the picker offers no levels.
 
 This plugin does **not** take over that discovery flow — one settings namespace admits a single
 registered discovery implementation, so an outside plugin cannot displace it. It opens a **second,
-separate sync channel**:
+separate sync channel**: read the endpoint catalog, work out each model's level declaration, write it.
 
-- the **Host half** resolves the credential, reads the endpoint catalog, plans, and writes;
-- the **Client half** registers into the seat the Models settings page reserves for outside plugins,
-  showing the difference and triggering a sync;
-- the same operation is also exposed as an agent tool: **one operation, two callers**, one
-  implementation.
+It syncs the capability of models **already declared**; the discovery flow governs **adopting
+candidates**. The two do not conflict, and this plugin keeps earning its keep after an upstream fix.
+
+## Installing into a profile
+
+Use Plugin Manager's `install_bundle` with this package's absolute directory as the target. It writes
+the profile's `package.json` and bundle selection for you — do **not** hand-edit the profile's
+`package.json` or `cordis.patch.yml`, and do not run pnpm in the profile directory.
+
+Afterwards the profile carries one `reasoning-sync` row, contributed by this package's own
+`cordis.patch.yml`.
+
+## Using it
+
+### The card in Settings
+
+In Settings → Models, the card of a route this plugin serves (one whose `baseURL` points at
+`openrouter.ai`) grows a panel:
+
+- it previews on open: the levels the endpoint publishes against the levels currently declared, per
+  model; with no difference it says "up to date";
+- when something differs, "Sync into configuration" writes it and then re-reads, so "up to date" is
+  the Host's answer rather than optimism;
+- a failure is shown with its reason (no credential, endpoint 401/500, non-JSON, revision conflict,
+  unwritable configuration) and **nothing is written**.
+
+### The agent tool
+
+The tool is named `reasoning_sync`:
+
+| Parameter | Meaning |
+| --- | --- |
+| `provider` | route key, e.g. `openrouter-live` (required) |
+| `action` | `preview` reads and plans, `apply` writes (the default) |
+
+Both paths call the same operation and return the same result, field for field.
 
 ## What it does / does not do
 
 Does:
 
-- shows, inside a provider card, the difference between the levels the endpoint publishes and the
-  levels currently declared
-- writes that difference with one action, touching only `reasoningEfforts` and never rebuilding a
-  model row
-- keeps levels following the endpoint: when it gains or drops a level, one re-run aligns them
+- touches **already declared** models only, and writes the `reasoningEfforts` field alone —
+  `name`, `contextWindow`, `maxTokens`, `input` and `compat` are never rebuilt or reordered;
+- adds a level the endpoint gained and removes one it dropped;
+- treats a model the endpoint publishes no capability for as **unknown** and leaves it alone
+  (unknown is not non-reasoning);
+- leaves a model declared in configuration but absent from the endpoint catalog (a cloaked model,
+  `stealth/*` for instance) exactly as it is, and names it in the report;
+- writes `reasoningEfforts: false` when the endpoint explicitly publishes no declarable level
+  (non-reasoning);
+- reports a level the adapter does not know rather than guessing a mapping — and never deletes
+  existing levels because of one;
+- removes an already declared `off` on a model the endpoint publishes as `mandatory` (reasoning
+  cannot be disabled), and names it in the report — keeping it is what produces that 400
+  (ADR-0005). Where the endpoint does not say so, `off` rides through untouched.
 
 Does not:
 
 - **change what the "fetch available models" button returns.** That field whitelist lives inside the
-  DSH application; only an upstream fix makes "discovery carries capability" true
-- add or remove models — it syncs the capability of models **already declared**
-- write an `off` key, which is a 400 against a mandatory model
-- guess a capability the endpoint never published: unknown models are left alone
+  DSH application; only an upstream fix makes "discovery carries capability" true;
+- **ever write an `off` key**, valueless `off:` included — against a mandatory model that is a
+  straight 400. An existing `off` declaration rides through unrelated edits untouched: the plugin
+  neither adds nor removes it;
+- write a route-level default level (`providers.<route>.reasoning`), or write "provider default";
+- sync on its own: every sync is triggered explicitly by the user or the agent.
 
-## Installing into a profile
+## Known limits and risks
 
-To be filled in once implemented: mount as a bundle through `dsh.profile.bundles` in
-`~/.dsh/profiles/<profile>/`.
+- **The card appears only on `openrouter.ai` routes.** The mapping is OpenRouter's
+  `reasoning.supported_efforts`; another endpoint speaks a different vocabulary and this plugin does
+  not guess at it. Every other provider card is untouched. To serve another endpoint, check its
+  catalog shape before changing `CATALOG_HOSTS` in `lib/routes.js`.
+- **The route list is read once when the page loads.** A newly added OpenRouter route needs a page
+  refresh before its card appears; cards already on screen are unaffected (every action re-reads the
+  configuration).
+- **The write lands in the profile's `cordis.patch.yml`** — the same file the settings UI writes.
+  Measured (the replay steps are in `docs/adr/0004`, Chinese): comments **inside** the
+  written row's `config` block are lost, while the rest of the file — the header comment, other rows,
+  key order, indentation — is preserved byte for byte. Keep commentary **above the row**, or in the
+  repo's docs, rather than under `providers:`. The fields the plugin writes land precisely.
+- It needs a usable credential for the route (read from the profile's `apiKeyEnv` through the
+  credentials service, falling back to the launch environment). Without one it reports "no
+  credential" and writes nothing.
+- Writes are revision-checked: a configuration changed elsewhere is refused with a re-run hint rather
+  than overwritten.
 
 ## Running the tests
 
 ```bash
 npm test
 ```
+
+Eight deterministic suites: the plan function's mapping rules exhausted; the Host operation against
+injected doubles; the routes and the `apply` wiring; the client bundle loaded in a vm and driven
+through rendering and actions; the package's own declarations and profile wiring.
+
+`test/registration.test.mjs` is the one suite that reaches outside the repo: it lifts the Models
+settings page's seat declaration, the slot registry, the tool registry's schema checker and its
+endpoint-segment grammar out of the **installed DSH application**, and validates this plugin's seat
+claim and tool schemas with them. Without the app installed it prints a loud SKIP and exits 0.

@@ -1,0 +1,61 @@
+{
+  "name": "dsh-reasoning-sync",
+  "description": "Sync the reasoning levels a model endpoint publishes into a DSH profile's route configuration, from the Models settings page or from an agent tool",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/plan.js",
+    "lib/routes.js",
+    "lib/sync.js",
+    "lib/tool.js",
+    "lib/client.js",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "node test/plan.test.mjs && node test/sync.test.mjs && node test/tool.test.mjs && node test/routes.test.mjs && node test/apply.test.mjs && node test/client.test.mjs && node test/registration.test.mjs && node test/wiring.test.mjs"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "reasoning-effort",
+    "thinking-level",
+    "openrouter",
+    "settings",
+    "web-gui"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1dustycy/dsh-reasoning-sync.git"
+  },
+  "homepage": "https://github.com/1dustycy/dsh-reasoning-sync#readme",
+  "bugs": {
+    "url": "https://github.com/1dustycy/dsh-reasoning-sync/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.4 <5"
+  }
+}
