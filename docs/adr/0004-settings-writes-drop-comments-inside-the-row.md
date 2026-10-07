@@ -39,6 +39,19 @@ await writeFileAtomic(path, String(document), { mode: 384 });
   12 行解释（为什么绝不写 `off`、刷新脚本怎么用），这 12 行在第一次同步后就不在了。
 - 写入的字段本身精确落位：`reasoningEfforts` 的键按我们构造的顺序排列。
 
+## 真机验证（2026-10-07 晚）
+
+上面的离线复现之后，真实 profile 上跑了一次写入（用户在设置页采纳了一个新模型
+`mistralai/mistral-large-4-0`，随后同步补上了它的等级声明）。核对结果与离线复现逐条一致：
+
+- **丢的**：`openrouter-live:` 那一行 `config` 块内部那 13 行注释（6174 → 5326 字节，正好是那段）。
+- **没丢的**：文件头两段注释、其他所有行、行与行之间的注释（`llm-deepseek` 那段仍在）、
+  键顺序（`xiaomi` 的 `apiKeyEnv` 仍在 `models` 之后）、缩进与引号风格。
+- 写进去的字段精确落位：新模型那一行只有 `reasoningEfforts: {high: high}`，
+  与端点公布的 `supported_efforts: ["high", "none"]` 一一对应（`none` 被丢掉）。
+
+结论不变：这是 settings 服务的写入粒度，不是本插件的编辑方式。注释请写在**行的上方**。
+
 也就是说，这不是本插件"改文件"造成的，而是 settings 服务本身的写入粒度：它按 profile
 entry 寻址、按 revision 校验、然后把**整个 `config` 节点**换成新值。任何走这条服务的
 插件都一样。

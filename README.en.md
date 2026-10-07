@@ -119,7 +119,7 @@ Does not:
   refresh before its card appears; cards already on screen are unaffected (every action re-reads the
   configuration).
 - **The write lands in the profile's `cordis.patch.yml`** — the same file the settings UI writes.
-  Measured (the replay steps are in `docs/adr/0004`, Chinese): comments **inside** the
+  Confirmed on a real profile (offline replay steps are in `docs/adr/0004`, Chinese): comments **inside** the
   written row's `config` block are lost, while the rest of the file — the header comment, other rows,
   key order, indentation — is preserved byte for byte. Keep commentary **above the row**, or in the
   repo's docs, rather than under `providers:`. The fields the plugin writes land precisely.
