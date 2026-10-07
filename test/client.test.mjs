@@ -299,7 +299,8 @@ function drifting() {
 				capability: {
 					levels: ["low", "medium"],
 					unknown: [],
-					mandatory: false
+					mandatory: false,
+					defaultEffort: "high"
 				}
 			}
 		]
@@ -447,7 +448,7 @@ test("a served route renders the difference between endpoint and declaration", a
 	assert.match(comparison, /当前 high → 端点 low · high · max/u, "both sides of the difference are shown, in declaration order");
 	assert.match(comparison, /默认 medium/u, "and the level the endpoint falls back to");
 	assert.ok(shown.some((text) => text.includes("stealth/space-bunny-alpha") && text.includes("保持原样")), "a cloaked model is named, and said to be left alone");
-	assert.ok(shown.some((text) => text.includes("anthropic/claude-opus-5.5") && text.includes("已是最新")), "a model already in step is listed too, so the reader can tell it was checked");
+	assert.ok(shown.some((text) => text.includes("anthropic/claude-opus-5.5") && text.includes("已是最新 · low · medium · 默认 high")), "a model already in step is listed too, and with it the level the picker's Default lands on");
 	assert.ok(shown.some((text) => text.includes("不新增、不删除模型")), "and the card says what a sync will not touch");
 	assert.equal(shown.filter((text) => text.includes("openai/gpt-6.1-sol") || text.includes("claude-opus-5.5") || text.includes("space-bunny")).length, 3, "every declared model earns exactly one row");
 });

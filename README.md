@@ -49,9 +49,16 @@ DSH 内置的「获取可用模型」把候选元数据削平到 `id` / `name` /
 指令，适配器一个 `reasoning` 字段都不发，由端点按自己的 `default_effort` 决定——卡片里
 「默认 medium」那个 medium 就是它的落点。
 
+**它落在哪一档，就是端点的 `default_effort`**——卡片每一行末尾那个「默认 medium / high」
+报的就是它（端点没公布时不显示）。
+
 它一直都在，因为本插件不写「提供方默认」、也不写路由级默认等级（story 29 / 30）。想让它
 消失只能去写路由级 `reasoning`（会改整条路由所有模型的默认行为）或写 `off`（对 mandatory
 模型直接 400）——两条都不是这个插件会走的路。
+
+顺带一提：`default` 不是 `supported_efforts` 里的档位名，所以 `reasoningEfforts` 里也没有
+`default` 这个键——写了会被适配器的 schema 拒（实测：键集合只有那 7 个名字）。「默认」在
+配置里的表达方式就是不选。
 
 ### agent 工具
 

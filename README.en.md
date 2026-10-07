@@ -57,10 +57,17 @@ Besides the levels a sync puts there, the model menu carries a **Default** entry
 provider default, and choosing it sends no level instruction at all, leaving the endpoint to decide
 by its own `default_effort` — the "default medium" the card reports is exactly where it lands.
 
+**Where it lands is the endpoint's `default_effort`** — the "default medium / high" at the end of
+each card row reports exactly that (and is absent when the endpoint publishes none).
+
 It is always there, because this plugin writes neither "provider default" nor a route-level default
 level (stories 29 / 30). Making it disappear would take a route-level `reasoning` (which changes the
 default behaviour of every model on the route) or an `off` key (a straight 400 against a mandatory
 model) — neither of which this plugin will do.
+
+One more thing: `default` is not one of the names in `supported_efforts`, so `reasoningEfforts` has
+no `default` key either — writing one is refused by the adapter's schema (measured: the key set is
+those seven names). "Default" is expressed in configuration by not selecting anything.
 
 ### The agent tool
 
