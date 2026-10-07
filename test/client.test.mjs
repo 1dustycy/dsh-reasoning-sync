@@ -515,6 +515,31 @@ test("levels the adapter does not know are reported as left alone", async () => 
 	assert.ok(shown.some((text) => text.includes("ultra")), "and the levels the adapter does not know are named rather than guessed at");
 });
 
+test("an endpoint whose default is to turn reasoning off says so in words", async () => {
+	hostDouble((body, path) => (path === plugin.ROUTES_ROUTE ? LISTED : {
+		...drifting(),
+		verdicts: [{
+			id: "openai/gpt-6.1-sol",
+			kind: "update",
+			declared: { high: "high" },
+			efforts: { high: "high" },
+			capability: {
+				levels: ["high"],
+				unknown: [],
+				mandatory: false,
+				defaultEffort: "none"
+			}
+		}]
+	}));
+	const ctx = clientContext();
+	await plugin.apply(ctx);
+	const instance = runtime.mount(ctx.cells[0].Component, seatProps(ctx));
+	await settle();
+	const row = texts(instance.tree).find((text) => text.includes("openai/gpt-6.1-sol"));
+	assert.match(row, /默认\s*关掉推理/u, "`none` is the wire value for off, not a level — printing it would read as one");
+	assert.ok(!/默认 none/u.test(row));
+});
+
 test("a cleared model shows what it declared, and a dropped off key is reported", async () => {
 	hostDouble((body, path) => (path === plugin.ROUTES_ROUTE ? LISTED : {
 		...drifting(),
