@@ -120,7 +120,7 @@ test("the route list is served as JSON", async () => {
 	});
 });
 
-test("a sync request runs the operation the tool runs, with the action it asked for", async () => {
+test("a sync request runs the operation, with the action it asked for", async () => {
 	const asked = [];
 	const response = await syncResponse(new Request(`http://127.0.0.1:19387${SYNC_ROUTE}`, {
 		method: "POST",

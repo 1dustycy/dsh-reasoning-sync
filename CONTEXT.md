@@ -57,7 +57,7 @@ _避免_: 结果、状态、action
 
 **可同步路由（syncable route）**：
 `baseURL` 指向端点目录宿主的 pi-ai 路由（`lib/routes.js` 的 `CATALOG_HOSTS`）。
-只有这种路由上才出现卡片，agent 工具也只在它上面有意义；其余路由一个字段都不碰。
+只有这种路由上才出现卡片；其余路由一个字段都不碰。
 _避免_: 支持的路由、OpenRouter 路由、目标路由
 
 **未知（unknown）**：

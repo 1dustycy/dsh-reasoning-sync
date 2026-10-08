@@ -13,6 +13,9 @@
 > inspection, such as a session command that `ctx.remote.commands.execute()` runs,
 > and shows the returned failure.
 
+（技能是按「一个操作、两个调用者」写的。本插件后来撤销了工具那一个调用者，见 ADR-0006；
+但卡片要过桥这件事与调用者有几个无关，这条 ADR 依然成立。）
+
 那条路在安装包里确实存在，形状也读得到：
 
 - Host 侧 `ctx.commands.register({ definitionId?, name, description, input?, recordInput?, handler })`
@@ -63,8 +66,7 @@ Host/Origin 检查与浏览器会话 Cookie，插件不新开通道。
 
 ## 后果
 
-- **一个操作，两个调用者**成立：tool 与卡片都调 `lib/sync.js` 的同一个 `run()`，
-  两次调用的结果在 `test/apply.test.mjs` 里被断言为逐字段相同。
+- 卡片调的是 `lib/sync.js` 的 `run()`，与 Host 半边的操作是同一份实现，不是第二套逻辑。
 - 这条路由是**写入口**：它落在 Connection 的 `/api` 围栏内（Host/Origin 检查 + 浏览器会话
   Cookie），并且**不声明 action 时只读**——`run()` 的默认是 `preview`，写入必须由调用方
   明说 `apply`。这样即使有人直接 POST 一个空体，也不会改配置。

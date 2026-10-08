@@ -8,8 +8,11 @@ so the levels in the model picker follow the endpoint instead of being hand-writ
 
 Open Settings → Models and the OpenRouter card shows the difference between **the levels the endpoint
 publishes** and **the levels currently declared** — both sides, plus the level the endpoint falls
-back to; one click aligns them. The same operation is also
-exposed as an agent tool: **one operation, two callers**, one implementation.
+back to; one click aligns them.
+
+It does **that page's job and nothing else**: it adds no tool to the model's tool set and never
+rewrites configuration from a conversation. A sync is configuration maintenance, and the difference
+is the person's to judge (see `docs/adr/0006`, Chinese).
 
 ## The gap it fills
 
@@ -69,17 +72,6 @@ One more thing: `default` is not one of the names in `supported_efforts`, so `re
 no `default` key either — writing one is refused by the adapter's schema (measured: the key set is
 those seven names). "Default" is expressed in configuration by not selecting anything.
 
-### The agent tool
-
-The tool is named `reasoning_sync`:
-
-| Parameter | Meaning |
-| --- | --- |
-| `provider` | route key, e.g. `openrouter-live` (required) |
-| `action` | `preview` reads and plans, `apply` writes (the default) |
-
-Both paths call the same operation and return the same result, field for field.
-
 ## What it does / does not do
 
 Does:
@@ -135,11 +127,12 @@ Does not:
 npm test
 ```
 
-Eight deterministic suites: the plan function's mapping rules exhausted; the Host operation against
-injected doubles; the routes and the `apply` wiring; the client bundle loaded in a vm and driven
-through rendering and actions; the package's own declarations and profile wiring.
+Seven deterministic suites, 86 assertions: the plan function's mapping rules exhausted; the Host
+operation against injected doubles; the routes, the `apply` wiring and the card; the client bundle
+loaded in a vm and driven through rendering and actions; the package's own declarations and profile
+wiring.
 
 `test/registration.test.mjs` is the one suite that reaches outside the repo: it lifts the Models
-settings page's seat declaration, the slot registry, the tool registry's schema checker and its
-endpoint-segment grammar out of the **installed DSH application**, and validates this plugin's seat
-claim and tool schemas with them. Without the app installed it prints a loud SKIP and exits 0.
+settings page's seat declaration, the slot registry and the Connection endpoint-segment grammar out
+of the **installed DSH application**, and validates this plugin's seat claim and its two routes with
+them. Without the app installed it prints a loud SKIP and exits 0.

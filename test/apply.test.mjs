@@ -1,10 +1,10 @@
 /**
- * The Host plugin body: the two callers the operation is offered to, and what
- * happens in a profile that has only one of the two services.
+ * The Host plugin body: the seat it offers the Models page, and what happens in
+ * a profile that cannot take it.
  *
  * `apply` is the only place that touches a Cordis context, so it is the only
- * host-side code a double has to stand in for. Everything behind it — the
- * operation, the plan, the tool, the routes — is covered by its own suite.
+ * host-side code a double has to stand in for. Everything behind the routes —
+ * the operation, the plan — is covered by its own suite.
  *
  * Run with `node test/apply.test.mjs`.
  */
@@ -12,7 +12,6 @@
 import assert from "node:assert/strict";
 import { apply, name } from "../lib/index.js";
 import { ROUTES_ROUTE, SYNC_ROUTE } from "../lib/routes.js";
-import { TOOL_NAME } from "../lib/tool.js";
 
 let passed = 0;
 const failures = [];
@@ -24,17 +23,17 @@ function test(title, body) {
 }
 
 /**
- * A Cordis context double: the two optional services, effect lifetime, and the
- * registries each half registers into.
+ * A Cordis context double: the optional Connection service, effect lifetime,
+ * and the registry the plugin registers into.
  *
  * `inject` mirrors the real loader: a service the profile does not provide
  * leaves the callback unrun — no throw, no log — and the plugin body simply
  * waits.
- * @param options - which services the profile has, and how the registries behave.
+ * @param options - whether the profile has Connection, and how its registry behaves.
  * @returns the context plus what was registered through it.
  */
-function context({ tools = true, connection = true, routes = {}, failSecondRoute = false } = {}) {
-	const registered = { tools: [], routes: [], warnings: [], disposed: [] };
+function context({ connection = true, routes = {}, failSecondRoute = false } = {}) {
+	const registered = { routes: [], warnings: [], disposed: [] };
 	const child = (services) => ({
 		get: (key) => services[key],
 		effect: (body, label) => {
@@ -55,12 +54,6 @@ function context({ tools = true, connection = true, routes = {}, failSecondRoute
 			}
 		}
 	};
-	const toolsService = {
-		register(definition) {
-			registered.tools.push(definition);
-			return () => registered.tools.splice(registered.tools.indexOf(definition), 1);
-		}
-	};
 	const ctx = {
 		...registered,
 		get: (key) => routes[key],
@@ -69,12 +62,8 @@ function context({ tools = true, connection = true, routes = {}, failSecondRoute
 		},
 		effect: (body, label) => child({}).effect(body, label),
 		inject(names, callback) {
-			if (names.includes("tools") && !tools) return;
 			if (names.includes("connection") && !connection) return;
-			callback(child({
-				tools: tools ? toolsService : void 0,
-				connection: connection === "bare" ? {} : connection ? connectionService : void 0
-			}));
+			callback(child({ connection: connection === "bare" ? {} : connection ? connectionService : void 0 }));
 		}
 	};
 	return ctx;
@@ -108,28 +97,24 @@ test("the plugin names itself for Loader diagnostics", () => {
 	assert.equal(name, "reasoning-sync");
 });
 
-test("apply offers the operation to both callers", () => {
+test("apply offers the Models page its two routes", () => {
 	const ctx = context();
 	apply(ctx);
-	assert.deepEqual(ctx.tools.map((tool) => tool.name), [TOOL_NAME], "the agent gets one tool");
-	assert.deepEqual(ctx.routes.map((route) => route.path), [SYNC_ROUTE, ROUTES_ROUTE], "the page gets both routes");
+	assert.deepEqual(ctx.routes.map((route) => route.path), [SYNC_ROUTE, ROUTES_ROUTE], "the card gets both routes");
 	assert.deepEqual(ctx.routes.map((route) => route.methods), [["POST"], ["GET"]], "a sync is a write, so it is a POST");
 	assert.deepEqual(ctx.routes.map((route) => route.requestBody), ["buffered", "buffered"], "both bodies are buffered before the handler runs");
-	assert.deepEqual(ctx.warnings, [], "a profile with both services warns about nothing");
+	assert.deepEqual(ctx.warnings, [], "a profile with Connection warns about nothing");
 });
 
-test("a profile without a tools service still gets the card", () => {
-	const ctx = context({ tools: false });
-	assert.doesNotThrow(() => apply(ctx));
-	assert.deepEqual(ctx.tools, []);
-	assert.equal(ctx.routes.length, 2, "the routes are independent of the tool");
-	assert.deepEqual(ctx.warnings, []);
+test("the routes are the whole Host surface", () => {
+	const ctx = context();
+	apply(ctx);
+	assert.deepEqual(ctx.disposed.map((entry) => entry.label), ["reasoning-sync: Models card routes"], "one effect owns everything the Host half registers — no tool, no service, no event listener");
 });
 
 test("a profile without Connection is a profile without a card, and nothing else", () => {
 	const ctx = context({ connection: false });
 	assert.doesNotThrow(() => apply(ctx));
-	assert.deepEqual(ctx.tools.map((tool) => tool.name), [TOOL_NAME], "the tool does not depend on the page half");
 	assert.deepEqual(ctx.routes, []);
 	assert.deepEqual(ctx.warnings, [], "waiting for a service is not a failure to report");
 });
@@ -154,7 +139,6 @@ test("unloading the plugin unregisters everything it registered", () => {
 	const ctx = context();
 	apply(ctx);
 	for (const { dispose } of ctx.disposed) dispose();
-	assert.deepEqual(ctx.tools, []);
 	assert.deepEqual(ctx.routes, []);
 });
 
@@ -184,29 +168,37 @@ test("the route list is empty, not broken, when there is no settings service", a
 	});
 });
 
-test("the tool and the card run the same operation against the same services", async () => {
-	const held = settings();
+test("the sync route runs the operation against the services the profile holds", async () => {
 	const ctx = context({ routes: {
-		settings: held,
+		settings: settings(),
 		credentials: { resolve: async () => ({ value: "sk-test" }) }
 	} });
 	const previousFetch = globalThis.fetch;
-	globalThis.fetch = async () => ({
-		ok: true,
-		status: 200,
-		json: async () => ({ data: [] })
-	});
+	const calls = [];
+	globalThis.fetch = async (url, init) => {
+		calls.push({
+			url,
+			init
+		});
+		return {
+			ok: true,
+			status: 200,
+			json: async () => ({ data: [] })
+		};
+	};
 	try {
 		apply(ctx);
-		const [tool] = ctx.tools;
 		const route = ctx.routes.find((candidate) => candidate.path === SYNC_ROUTE);
-		const fromTool = await tool.execute({ provider: "openrouter-live" });
-		const fromCard = await (await route.fetch(new Request(`http://127.0.0.1:19387${SYNC_ROUTE}`, {
+		const answer = await (await route.fetch(new Request(`http://127.0.0.1:19387${SYNC_ROUTE}`, {
 			method: "POST",
 			body: JSON.stringify({ provider: "openrouter-live" })
 		}))).json();
-		assert.equal(fromTool.ok, true);
-		assert.deepEqual(fromTool, fromCard, "both callers see the same result, field for field");
+		assert.equal(answer.ok, true);
+		assert.equal(answer.provider, "openrouter-live");
+		assert.equal(answer.action, "preview", "a body with no action only reads");
+		assert.equal(calls.length, 1, "the operation read the endpoint the route names");
+		assert.equal(calls[0].url, "https://openrouter.ai/api/v1/models");
+		assert.equal(calls[0].init.headers.authorization, "Bearer sk-test", "with the credential the route's own reference resolves to");
 	} finally {
 		globalThis.fetch = previousFetch;
 	}

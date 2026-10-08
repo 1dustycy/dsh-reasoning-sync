@@ -1,6 +1,6 @@
 {
   "name": "dsh-reasoning-sync",
-  "description": "Sync the reasoning levels a model endpoint publishes into a DSH profile's route configuration, from the Models settings page or from an agent tool",
+  "description": "Show, in the Models settings page, the difference between the reasoning levels a model endpoint publishes and the levels a DSH profile declares, and write that difference into the route configuration",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
@@ -20,12 +20,11 @@
     "lib/plan.js",
     "lib/routes.js",
     "lib/sync.js",
-    "lib/tool.js",
     "lib/client.js",
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "node test/plan.test.mjs && node test/sync.test.mjs && node test/tool.test.mjs && node test/routes.test.mjs && node test/apply.test.mjs && node test/client.test.mjs && node test/registration.test.mjs && node test/wiring.test.mjs"
+    "test": "node test/plan.test.mjs && node test/sync.test.mjs && node test/routes.test.mjs && node test/apply.test.mjs && node test/client.test.mjs && node test/registration.test.mjs && node test/wiring.test.mjs"
   },
   "keywords": [
     "dsh",

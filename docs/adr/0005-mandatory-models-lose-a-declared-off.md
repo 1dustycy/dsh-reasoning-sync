@@ -30,8 +30,8 @@
 - 端点**没有说** mandatory（`false` 或字段缺席）时，行为不变：已存在的 `off` 原样保留
   （`CONTEXT.md` 的"既不新增也不删除"仍然成立，而且那是用户的合法选择——比如给
   `off` 指定 `disabled` 这样的 wire 值）。
-- 端点**说了** mandatory 时，`off` 被移除，判定带 `removed: ["off"]`，卡片与 agent 工具
-  都会把这次移除说出来——静默的破坏性编辑正是本插件处处在躲的东西。
+- 端点**说了** mandatory 时，`off` 被移除，判定带 `removed: ["off"]`，卡片会把这次移除
+  说出来——静默的破坏性编辑正是本插件处处在躲的东西。
 
 判据是端点公布的事实，不是我们猜的：`capability.mandatory === true` 才触发。
 
